@@ -1,0 +1,22 @@
+let
+    Source = Csv.Document(File.Contents("C:\Users\Administrator\Desktop\projects\Cafe Sales Data Cleaning\dirty_cafe_sales.csv"),[Delimiter=",", Columns=8, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers",{{"Transaction ID", type text}, {"Item", type text}, {"Quantity", type text}, {"Price Per Unit", type text}, {"Total Spent", type text}, {"Payment Method", type text}, {"Location", type text}, {"Transaction Date", type text}}),
+    #"Replaced Value" = Table.ReplaceValue(#"Changed Type","ERROR",null,Replacer.ReplaceValue,{"Transaction ID", "Item", "Quantity", "Price Per Unit", "Total Spent", "Payment Method", "Location", "Transaction Date"}),
+    #"Replaced Value1" = Table.ReplaceValue(#"Replaced Value","UNKNOWN",null,Replacer.ReplaceValue,{"Transaction ID", "Item", "Quantity", "Price Per Unit", "Total Spent", "Payment Method", "Location", "Transaction Date"}),
+    #"Replaced Value2" = Table.ReplaceValue(#"Replaced Value1","N/A",null,Replacer.ReplaceValue,{"Transaction ID", "Item", "Quantity", "Price Per Unit", "Total Spent", "Payment Method", "Location", "Transaction Date"}),
+    #"Replaced Value3" = Table.ReplaceValue(#"Replaced Value2","",null,Replacer.ReplaceValue,{"Transaction ID", "Item", "Quantity", "Price Per Unit", "Total Spent", "Payment Method", "Location", "Transaction Date"}),
+    #"Replaced Value4" = Table.ReplaceValue(#"Replaced Value3"," ",null,Replacer.ReplaceValue,{"Transaction ID", "Item", "Quantity", "Price Per Unit", "Total Spent", "Payment Method", "Location", "Transaction Date"}),
+    #"Changed Type1" = Table.TransformColumnTypes(#"Replaced Value4",{{"Quantity", Int64.Type}, {"Price Per Unit", type number}, {"Total Spent", type number}, {"Transaction Date", type date}}),
+    #"Replaced Value5" = Table.ReplaceValue(#"Changed Type1",null,"Juice",Replacer.ReplaceValue,{"Item"}),
+    #"Replaced Value6" = Table.ReplaceValue(#"Replaced Value5",null,"Digital Wallet",Replacer.ReplaceValue,{"Payment Method"}),
+    #"Replaced Value7" = Table.ReplaceValue(#"Replaced Value6",null,"Takeaway",Replacer.ReplaceValue,{"Location"}),
+    #"Replaced Value8" = Table.ReplaceValue(#"Replaced Value7",null,3,Replacer.ReplaceValue,{"Quantity"}),
+    #"Replaced Value9" = Table.ReplaceValue(#"Replaced Value8",null,3,Replacer.ReplaceValue,{"Price Per Unit"}),
+    #"Removed Columns" = Table.RemoveColumns(#"Replaced Value9",{"Total Spent"}),
+    #"Inserted Multiplication" = Table.AddColumn(#"Removed Columns", "Multiplication", each [Price Per Unit] * [Quantity], type number),
+    #"Reordered Columns" = Table.ReorderColumns(#"Inserted Multiplication",{"Transaction ID", "Item", "Quantity", "Price Per Unit", "Multiplication", "Payment Method", "Location", "Transaction Date"}),
+    #"Renamed Columns" = Table.RenameColumns(#"Reordered Columns",{{"Multiplication", "Total Spent"}}),
+    #"Removed Duplicates" = Table.Distinct(#"Renamed Columns")
+in
+    #"Removed Duplicates"
